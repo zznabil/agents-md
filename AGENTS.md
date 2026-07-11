@@ -55,7 +55,7 @@ Examples: exported symbols, shared modules, public APIs, reused helpers, cross-f
 Expected behavior:
 
 - inspect references and call paths before editing;
-- use LSP, codegraph, AST tools, or other structural tools when they materially improve safety;
+- use structural code intelligence tools (LSP, AST parsers, code graphs) when they materially improve safety;
 - update or add tests around the changed behavior;
 - update affected living docs when system meaning changes;
 - mention blast-radius considerations in the final summary.
@@ -152,45 +152,13 @@ Do not invent a strategy layer for trivial one-off behavior. Prefer simple direc
 
 ## 6) SOLID, Separation of Concerns, and Modularity
 
-Treat these as practical engineering constraints, not slogans.
+Treat these as practical engineering constraints, not slogans. Keep modules focused, composable, and loosely coupled; extract when cohesion weakens.
 
-- **Single Responsibility:** one module, one job.
-- **Open/Closed:** extend by adding a strategy, adapter, or pure helper rather than rewriting the core.
-- **Liskov Substitution:** every strategy or implementation must honor the exact contract it advertises.
-- **Interface Segregation:** small interfaces, small inputs, small outputs.
-- **Dependency Inversion:** high-level code depends on abstractions, interfaces, protocols, or function references rather than concrete implementation details.
-- **Separation of Concerns:** keep orchestration, domain logic, persistence, UI, and integration boundaries distinct.
-- **High Cohesion:** related behavior stays together.
-- **Low Coupling:** modules should know as little as possible about each other.
-- **Composability:** prefer small helpers that combine cleanly.
-- **Modularity:** build reusable units with sharp boundaries.
+Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion, Separation of Concerns, High Cohesion, Low Coupling, Composability, Modularity.
 
 ## 7) Code Smell Response
 
-Code smells are treated as defects in production-quality code, but respond proportionally.
-
-Common defects:
-
-- Long Method
-- God Class
-- Feature Envy
-- Dead Code
-- Magic Numbers
-- Shotgun Surgery
-- Duplication
-- Circular Dependencies
-- Technical Debt disguised as "future work"
-- Low Cohesion
-- Tight Coupling
-
-Rules:
-
-- If a function grows too large, extract smaller pure functions.
-- If a module becomes a grab bag, split it.
-- If behavior is duplicated, centralize it once.
-- If a dependency cycle appears, break it at the seam.
-- If a constant matters, name it.
-- If code is obsolete, delete it.
+Treat code smells as defects in production code, but respond proportionally. Extract growing functions, split grab-bag modules, centralize duplicated logic, break dependency cycles at the seam, name magic constants, delete dead code.
 
 When a smell is outside the task scope, do not perform an opportunistic large refactor unless it is necessary for the requested change. Instead, mention the risk or leave a focused TODO only when it adds real value.
 
@@ -208,15 +176,7 @@ Optimize for fast diagnosis.
 
 ## 9) Tooling and Editing Discipline
 
-Use the best available tool for the task, matched to the risk tier.
-
-### Preferred tools
-
-- **codegraph**: use when an index exists and the task affects shared code, architecture, call paths, or blast radius.
-- **LSP**: use for navigation, references, rename, diagnostics, and refactors when a language server is available.
-- **AST tools** (`ast_grep`, `ast_edit`): use for structural discovery and structural rewrites such as declarations, callsites, signatures, imports, and codemods.
-- **Hashline edit**: use for precise, line-aware modifications when editing by line is safest.
-- **Plain text search/edit**: acceptable for tiny/local edits, prose, config, or when better tools are unavailable or clearly unnecessary.
+Use the best available tool for the task, matched to the risk tier. Choose tools by what they do, not by their name. If the strongest tool is unavailable, fall back to the next safest method that achieves the same goal. Note the substitution transparently in the final summary when it materially affects confidence or quality.
 
 ### Mandatory habits
 
@@ -224,11 +184,9 @@ Use the best available tool for the task, matched to the risk tier.
 - Before editing shared or central code, inspect dependencies and call paths.
 - After every significant edit, re-ground on the updated file state before continuing.
 - Prefer the smallest correct change.
-- Do not use broad text replacement for structural code changes when AST, LSP, or other structural tooling is available and appropriate.
-- If a preferred tool is unavailable, use the next safest method and be transparent in the final summary when it matters.
+- Do not use broad text replacement for structural code changes when structural tools (AST, LSP, code graph) are available and appropriate.
 
 Tooling should improve confidence. It should not become performance theatre.
-
 ## 10) Testing and Verification
 
 Every meaningful code change needs credible verification.
@@ -282,119 +240,53 @@ Project documentation is local, version-controlled, and kept current when it is 
 
 Documentation must be useful, current, and close to the actual system. Avoid documentation theatre.
 
-### Canonical documentation location
+### Canonical locations
 
-Maintain the active project context at the project root as `context.md`.
+Maintain active project context at root `context.md`. Maintain remaining documentation under `docs/` with canonical lowercase filenames:
 
-`context.md` is allowed at root because agents need to discover it quickly before planning or editing. It is a living project artifact, not a governance source. It must not contain rules that compete with `AGENTS.md`.
+| File | Purpose |
+|------|---------|
+| `context.md` | Current project state, constraints, glossary, active scope |
+| `docs/user-stories.md` | User goals, roles, stories, product expectations |
+| `docs/acceptance-criteria.md` | Testable done conditions, verification checklist |
+| `docs/architecture-diagram.md` | High-level architecture, components, boundaries |
+| `docs/block-diagram.md` | Block-level component decomposition |
+| `docs/sequence-diagrams.md` | Mermaid sequence diagrams for important flows |
+| `docs/activity-diagrams.md` | Activity diagrams for workflows and processes |
+| `docs/flowcharts.md` | Procedural decision flows |
+| `docs/state-machines.md` | State machines, transitions, guards, side effects |
+| `docs/use-case-diagram.md` | Actors, use cases, system boundary |
+| `docs/event-flow-diagram.md` | Domain events, producers, consumers, ordering |
+| `docs/uml.md` | UML index (do not duplicate other doc content) |
+| `docs/adr/` | Architecture Decision Records, one per file |
+| `docs/changelog.md` | User-visible or externally meaningful changes |
+| `docs/audit.md` | Engineering change trace with context |
 
-Maintain the remaining project documentation under `docs/` unless the project already has a clearly established documentation directory.
+Not every project must instantiate every document — create when useful, never create empty placeholders. ADRs go in `docs/adr/`. Do not duplicate context across root and `docs/`. Do not mix cases (prefer lowercase canonical names; migrate old uppercase variants if they exist).
 
-Use canonical lowercase filenames and avoid duplicate responsibility:
+### Update rule
 
-- `context.md` — root-level current project context, constraints, assumptions, glossary, active scope, and latest working notes needed before planning.
-- `docs/user-stories.md` — user goals, roles, stories, and product expectations.
-- `docs/acceptance-criteria.md` — testable acceptance criteria, done conditions, and verification checklist.
-- `docs/architecture-diagram.md` — high-level architecture, major components, boundaries, and dependencies.
-- `docs/block-diagram.md` — block-level system/component decomposition.
-- `docs/sequence-diagrams.md` — Mermaid sequence diagrams for important flows.
-- `docs/activity-diagrams.md` — activity diagrams for workflows and business processes.
-- `docs/flowcharts.md` — procedural decision flows that are clearer as flowcharts.
-- `docs/state-machines.md` — state machines, state diagrams, transitions, guards, and side effects.
-- `docs/use-case-diagram.md` — actors, use cases, system boundary, and relationships.
-- `docs/event-flow-diagram.md` — domain events, producers, consumers, message flow, and ordering assumptions.
-- `docs/uml.md` — UML overview or index linking to UML-style diagrams; do not duplicate content already owned by a more specific document.
-- `docs/adr/` — Architecture Decision Records, one decision per file.
-- `docs/changelog.md` — user-visible or externally meaningful changes.
-- `docs/audit.md` — implementation audit trail for meaningful AI-assisted or human-assisted changes.
+Update affected docs in the same change when architecture, user-visible behavior, state transitions, APIs, major decisions, or risks change. If a change has no documentation impact, leave docs untouched.
 
-Not every project must instantiate every document immediately. Create or maintain a document when it has real content and improves future work. Do not create empty placeholder docs unless the project is being initialized and the placeholder has an immediate purpose.
+### Diagrams
 
-Do not create both root and `docs/` variants of `context.md`. If `docs/context.md` already exists, migrate or redirect its content into root `context.md` and retire the duplicate.
+Prefer Mermaid inside Markdown. Diagrams must describe the current system. Do not maintain diagrams for flows too trivial to justify them.
 
-Do not create both uppercase and lowercase variants of the same document. If older files such as `STATE-MACHINES.md`, `SEQUENCE-DIAGRAMS.md`, or `ACTIVITY-DIAGRAM.md` already exist, migrate or redirect their content into the canonical lowercase file and retire the duplicate.
+### ADRs
 
-### Documentation update rule
+Use ADRs for durable decisions (architecture, dependencies, data model, interfaces, deployment, security, performance). Each ADR: status, context, decision, consequences, alternatives considered. Do not ADR trivial details.
 
-Before and after any non-trivial change, identify which living docs are affected.
+### Audit and changelog
 
-Update the relevant docs in the same change when any of these change:
-
-- architecture, boundaries, modules, dependencies, or deployment shape;
-- user-visible behavior, product scope, or acceptance criteria;
-- state transitions, workflow logic, event flow, orchestration, or business process;
-- public APIs, integrations, protocols, storage schemas, or message contracts;
-- major implementation strategy, tradeoff, constraint, or decision;
-- risks, known limitations, migration notes, or verification steps.
-
-If a change has no documentation impact, leave the docs untouched. Do not perform noisy timestamp-only edits.
-
-### Diagram rules
-
-Prefer Mermaid inside Markdown for diagrams unless the project has a stronger existing convention.
-
-Every diagram document should include, when useful:
-
-- a short purpose statement;
-- the scope covered by the diagram;
-- the diagram source in editable text form;
-- important assumptions and constraints;
-- a "last meaningfully updated" note tied to the change, not a mechanical timestamp.
-
-Diagrams must describe the current intended system, not outdated history. If a diagram becomes obsolete, update it or clearly mark it as retired with a replacement link.
-
-Do not maintain diagrams for flows that are too trivial to justify them. Prefer one accurate compact diagram over many stale detailed diagrams.
-
-### ADR rules
-
-Use ADRs for durable decisions that affect architecture, dependencies, data model, interfaces, deployment, security, performance, or long-term maintenance.
-
-Each ADR should include:
-
-- status: proposed, accepted, superseded, or rejected;
-- context;
-- decision;
-- consequences;
-- alternatives considered;
-- links to related docs, issues, or implementation areas.
-
-Do not create an ADR for trivial implementation details.
-
-### Audit and changelog rules
-
-`docs/audit.md` records meaningful engineering changes and why they were made. Include enough context for future maintainers to understand intent, risk, and verification.
-
-`docs/changelog.md` records externally meaningful changes. Do not turn it into a raw commit log.
-
-For each meaningful change, update audit/changelog only when relevant:
-
-- Audit entry: change summary, files/areas touched, reason, risk, verification performed.
-- Changelog entry: added, changed, fixed, removed, deprecated, or security impact.
+`docs/audit.md` records meaningful engineering changes with context. `docs/changelog.md` records externally meaningful changes. Update only when relevant; do not turn into commit logs.
 
 ### Staleness prevention
 
-Documentation must not become decorative.
-
-When editing code, tests, configuration, or project behavior:
-
-1. inspect the relevant existing docs before changing behavior;
-2. update affected docs after the implementation;
-3. remove obsolete documentation instead of preserving contradictions;
-4. ensure docs and implementation tell the same story;
-5. mention any documentation updates in the final work summary.
-
-If implementation and docs conflict, treat it as a defect. Resolve the conflict by checking the code, tests, user request, and current project intent before changing either side.
+Before editing code, check existing docs. Update after, remove contradictions, ensure docs and implementation tell the same story. If they conflict, resolve by checking code, tests, user request, and intent before changing either side.
 
 ### Anti-bloat guardrails
 
-Keep documentation useful, not bureaucratic.
-
-- Do not create empty placeholder docs unless the project is being initialized and the placeholder is immediately useful.
-- Do not duplicate the same diagram across multiple files.
-- Do not write project governance rules into `docs/`; governance belongs only in `AGENTS.md`.
-- Do not maintain diagrams for flows that are too trivial to justify them.
-- Prefer one accurate compact diagram over many stale detailed diagrams.
-- Keep docs close to the actual system and prune aggressively.
+Do not create empty placeholder docs, duplicate diagrams, or write governance into `docs/`. Keep docs close to the system and prune aggressively.
 
 ## 14) Prototype Mode
 
@@ -430,59 +322,17 @@ When user intent is clear, do not stall with unnecessary questions. Make the bes
 
 ## 16) Considerate Agency
 
-Agents should reduce the need for human supervision through considerate,
-context-aware judgment. Complete the intended outcome, not merely the literal
-task, while preserving the user's authority over consequential choices.
+Agents should reduce the need for human supervision through considerate, context-aware judgment. Complete the intended outcome, not merely the literal task, while preserving the user's authority over consequential choices.
 
 ### Aim
 
-- Optimize for intent fidelity, right-sized completion, and system integrity.
-- Anticipate ordinary needs, follow through on safe work, and avoid making the
-  user manage routine decisions or recover from preventable omissions.
+Optimize for intent fidelity, right-sized completion, and system integrity. Anticipate ordinary needs, follow through on safe work, and avoid making the user manage routine decisions or recover from preventable omissions.
 
-### Read the Intent
-
-- Start with a cheap local-context and impact check; expand discovery only
-  when the work crosses a boundary, carries meaningful risk, or leaves
-  material uncertainty.
-- Infer and act on assumptions that are low-risk, reversible, and consistent
-  with surrounding context. State material assumptions.
-- Ask before proceeding when an assumption would change product behavior,
-  scope, cost, security, or architecture, or when credible interpretations
-  lead to materially different outcomes.
-- For unspecified subjective choices, follow the strongest local convention;
-  otherwise choose the simplest clear, accessible, maintainable option.
-
-### Act at the Right Scope
-
-- Make an adjacent correction autonomously only when it is reversible, tightly
-  coupled to the requested work, and required for correctness.
-- Consult an available advisor, planner, researcher, or other specialist
-  before an irreversible or high-blast-radius decision, or one that is
-  security/data-sensitive, materially ambiguous, or based on unfamiliar or
-  uncertain facts. Consultation informs the accountable agent; it does not
-  transfer responsibility.
-- When blocked, seek targeted advice and exhaust safe, in-scope alternatives
-  before returning to the user. Escalate only for new authority, a materially
-  different product choice, or an external change.
-
-### Challenge the Work
-
-- Before shared, architectural, risky, or irreversible work, and whenever
-  confidence is low, run a brief pre-mortem covering intent mismatch,
-  regression or blast radius, scope creep, and verification gaps. Apply the
-  same check mentally for tiny or local work without adding ceremony.
-- For user-visible or shared work, perform a proportionate quality pass:
-  check local conventions, edge and error cases, clarity, relevant
-  accessibility or usability, and avoidable follow-up work.
+Before shared, architectural, or risky work, run a brief pre-mortem covering intent mismatch, regression or blast radius, scope creep, and verification gaps. Consult an advisor before an irreversible, high-blast-radius, or security-sensitive decision. Exhaust safe in-scope alternatives before escalating to the user.
 
 ### Finish for the Human
 
-- Start every completion with the outcome. For non-trivial work, state the
-  material assumptions or decisions, verification actually performed,
-  affected areas, and any remaining risk or user choice.
-- Omit routine tool narration and implementation trivia unless it changes a
-  decision. End with a compact TL;DR.
+Start every completion with the outcome. For non-trivial work, state the material assumptions or decisions, verification actually performed, affected areas, and any remaining risk or user choice. Omit routine tool narration and implementation trivia unless it changes a decision. End with a compact TL;DR.
 
 ## 17) Final Work Summary
 
@@ -496,41 +346,20 @@ For non-trivial work, finish with a concise summary covering:
 
 Do not claim certainty beyond the evidence. Be explicit about anything not run, not checked, or intentionally deferred.
 
-<!-- code-review-graph MCP tools -->
-## MCP Tools: code-review-graph
+## Tooling & Discovery
 
-**IMPORTANT: This project has a knowledge graph. ALWAYS use the
-code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
-the codebase.** The graph is faster, cheaper (fewer tokens), and gives
-you structural context (callers, dependents, test coverage) that file
-scanning cannot.
+This project uses a capability-first approach: choose the strongest available tool for each task, not the most familiar name. MCP servers are session-dependent — a server present today may be absent tomorrow.
 
-### When to use graph tools FIRST
+### Graph-first mandate
 
-- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
-- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
-- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
-- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
-- **Architecture questions**: `get_architecture_overview` + `list_communities`
+If the code-review-graph MCP server is available (detected via `search_tool_bm25` or active tool list), use its structural graph tools **before** Grep/Glob/Read for codebase exploration:
 
-Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+- `query_graph` / `semantic_search_nodes` for callers, callees, imports, tests
+- `get_impact_radius` / `get_affected_flows` for blast radius
+- `detect_changes` + `get_review_context` for code review
 
-### Key Tools
+**Fallback when graph is unavailable or the target is untracked / gitignored / generated (outside the graph's git index):** use filesystem tools (grep, ast_grep, lsp, read). Rule of thumb: graph first for structural understanding; grep first for finding a known string in a known file.
 
-| Tool | Use when |
-| ------ | ---------- |
-| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
-| `get_review_context` | Need source snippets for review — token-efficient |
-| `get_impact_radius` | Understanding blast radius of a change |
-| `get_affected_flows` | Finding which execution paths are impacted |
-| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
-| `semantic_search_nodes` | Finding functions/classes by name or keyword |
-| `get_architecture_overview` | Understanding high-level codebase structure |
-| `refactor_tool` | Planning renames, finding dead code |
+### Proactive discovery
 
-### Workflow
-
-1. The graph auto-updates on file changes (via hooks).
-2. Use `detect_changes` for code review.
-3. Use `get_affected_flows` to understand impact.
-4. Use `query_graph` pattern="tests_for" to check coverage.
+Call `search_tool_bm25` at session start with capabilities you need — it activates matching MCP tools. If a tool is absent, follow the fallback chain from strongest available to safest fallback. Document blocked tools as session limitations; do not silently substitute.
